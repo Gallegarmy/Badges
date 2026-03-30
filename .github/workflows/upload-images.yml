@@ -1,4 +1,4 @@
-name: Upload Images to PostgreSQL (Docker)
+name: Upload Badge to PostgreSQL
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get added image files from PR (GitHub API)
+      - name: Get added image files from PR
         id: changed
         run: |
           FILES=$(curl -s \
@@ -37,7 +37,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 135.181.82.75 >> ~/.ssh/known_hosts
 
-      - name: Insert images into PostgreSQL (Docker)
+      - name: Insert badge into PostgreSQL 
         if: steps.changed.outputs.files != ''
         run: |
           IFS=$'\n'
@@ -47,7 +47,6 @@ jobs:
             do
               filename=$(basename "$file" | sed 's/_/ /g')
 
-              # escape quotes for SQL safety
               safe_filename=$(printf "%s" "$filename" | sed "s/'/''/g")
 
               url="https://raw.githubusercontent.com/${{ github.repository }}/main/$file"
