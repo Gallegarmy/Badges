@@ -2,30 +2,25 @@ name: Upload Images to PostgreSQL (Docker)
 
 on:
   pull_request:
-    branches:  
+    branches:
       - main
     types:
       - closed
-  
+
 jobs:
   upload-images:
     if: github.event.pull_request.merged == true
-
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Get newly added image files from PR
+      - name: Get added image files from PR (GitHub API)
         id: changed
         run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }}
-
-          FILES=$(git diff --name-status origin/${{ github.event.pull_request.base.ref }} ${{ github.sha }} \
-          | grep '^A' \
-          | awk '{print $2}' \
-          | grep -Ei '\.(png|jpg|jpeg|webp)$' || true)
+          FILES=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "${{ github.event.pull_request.url }}/files" \
+            | jq -r '.[] | select(.status=="added") | .filename' \
+            | grep -Ei '\.(png|jpg|jpeg|webp)$' || true)
 
           echo "FILES FOUND:"
           echo "$FILES"
@@ -50,10 +45,14 @@ jobs:
           {
             for file in ${{ steps.changed.outputs.files }}
             do
-              filename= $(basename "$file" | sed 's/_/ /g')
+              filename=$(basename "$file" | sed 's/_/ /g')
+
+              # escape quotes for SQL safety
+              safe_filename=$(printf "%s" "$filename" | sed "s/'/''/g")
+
               url="https://raw.githubusercontent.com/${{ github.repository }}/main/$file"
 
-              echo "INSERT INTO badges (name,description,image_url,is_permanent) VALUES ('$filename','$filename', '$url',true);"
+              echo "INSERT INTO badges (name, description, image_url, is_permanent) VALUES ('$safe_filename', '$safe_filename', '$url', true);"
             done
           } | ssh ${{ secrets.VPS_USER }}@135.181.82.75 \
               "docker exec -i badges_db psql -U badges_user -d badges"
