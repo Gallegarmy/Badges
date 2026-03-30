@@ -17,10 +17,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Get changed image files
+      - name: Get newly added image files from PR
         id: changed
         run: |
-          FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '\.(png|jpg|jpeg|webp)$' || true)
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+
+          FILES=$(git diff --name-status origin/${{ github.event.pull_request.base.ref }} ${{ github.sha }} \
+          | grep '^A' \
+          | awk '{print $2}' \
+          | grep -Ei '\.(png|jpg|jpeg|webp)$' || true)
+
+          echo "FILES FOUND:"
+          echo "$FILES"
+
           echo "files<<EOF" >> $GITHUB_OUTPUT
           echo "$FILES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
