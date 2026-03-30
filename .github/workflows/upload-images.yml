@@ -1,17 +1,16 @@
 name: Upload Images to PostgreSQL (Docker)
 
 on:
-  push:
-    branches:
+  pull_request:
+    branches:  
       - main
-    paths:
-      - '**.png'
-      - '**.jpg'
-      - '**.jpeg'
-      - '**.webp'
-
+    types:
+      - closed
+  
 jobs:
   upload-images:
+    if: github.event.pull_request.merged == true
+
     runs-on: ubuntu-latest
 
     steps:
