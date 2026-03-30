@@ -47,5 +47,4 @@ jobs:
               echo "INSERT INTO badges (name,description,image_url,is_permanent) VALUES ('$filename','$filename', '$url',true);"
             done
           } | ssh ${{ secrets.VPS_USER }}@135.181.82.75 \
-              "docker exec -e PGPASSWORD=${{ secrets.DB_PASSWORD }} -i YOUR_CONTAINER_NAME \
-               psql -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }}"
+              "docker exec -i badges_db psql -U badges_user -d badges"
