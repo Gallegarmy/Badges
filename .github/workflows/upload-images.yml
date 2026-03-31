@@ -45,7 +45,7 @@ jobs:
           {
             for file in ${{ steps.changed.outputs.files }}
             do
-              filename=$(basename "$file" | sed 's/_/ /g')
+              filename=$(basename "$file" | sed 's/_/ /g' | sed -E 's/\.(png|jpg|jpeg|webp)//g' )
 
               safe_filename=$(printf "%s" "$filename" | sed "s/'/''/g")
 
